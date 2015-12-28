@@ -3,6 +3,7 @@ import logging
 import pymongo
 from pymongo import MongoClient, InsertOne
 import boto3
+import re
 
 logging.basicConfig(level=logging.INFO,
                     format='(%(threadName)4s) %(levelname)s %(message)s',
@@ -90,13 +91,30 @@ def loadSnapshots():
             logging.info("%d Snapshots loaded" % len(snapshots["Snapshots"]) )
             dbLoader(request,"snapshots")
 
+def findEx():
+    connection = MongoClient(target,port)
+    #connection.admin.authenticate(username,password)
+    db = connection.amazon
+    terminations = db["terminations"].find({})
+    print "Currently searching for this number of old employees: " + str(terminations.count())
+    for i in terminations:
+        username=i["First Name"]+"."+i["Last Name"]
+        #print username
+        user_cursor = db.iam.find( { "UserName" : { '$regex' : username, '$options' : 'i'}})
+        if user_cursor.count() != 0:
+            print "Old user found " + i["First Name"] + " " + i["Last Name"]
+    
+#    logging.info("Starting bulk load results %s" % (bulk_result.bulk_api_result))
+    
+    
 #Global Variables
 target = "localhost"
 port = 27017
-client = boto3.client('ec2',region_name=None)
-regions = client.describe_regions()  
+#client = boto3.client('ec2',region_name=None)
+#regions = client.describe_regions()  
 
-loadUsers()
-loadInstances()
-loadVolumes()
-loadSnapshots()
+#loadUsers()
+#loadInstances()
+#loadVolumes()
+#loadSnapshots()
+findEx()
